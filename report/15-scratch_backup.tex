@@ -1,0 +1,99 @@
+\chapter{Nodo de respaldo y scratch Eskameca}
+Para albergar el servicio de respaldo del clúster Kabré, se ha destinado un nodo nuevo, llamado Eskameca, para alojar los discos de 4 TB restantes de la última recuperación de datos tras la falla en sol3. En este momento el nodo contiene 5 discos de 4 TB, de los cuales 3 se han destinado para el respaldo del home y opt, mientras que 2 de esos disco se han destinado para crear el directorio scratch, el cual es un directorio de trabajo especial para archivos de gran tamaño, particularmente para bioinformática, y el cual no se respalda. La configuración de este almacenamiento es un LVM para backup y un RAID0 para scratch. A continuación se muestra el procedimiento para replicar estas configuraciones.
+
+En una instalación fresca de CentOS 7, se siguen los pasos de configuración inicial, especialmente los relacionados con SELinux, Firewall, LDAP y NFS, así como la configuración de red para agregar el nodo al DHCP de Kabré.
+
+\section{Scratch}
+Scratch se construye usando 2 discos de 4 TB en RAID0 para mejorar la lectura y escritura a través del stripping de datos. Para poder crear el arreglo, se debe instalar primero mdadm \cite{raid0}.
+
+\begin{lstlisting}
+yum install mdadm rsync cfdisk cgdisk gdisk nfs-utils
+\end{lstlisting}
+
+Ahora se listan los discos disponibles y se formatean con una tabla de partición gpt, pues esta tabla es compatible con particiones de 4 TB o más. En este caso se muestra el output particular para Eskameca, pero es posible que esto varíe según el equipo donde se replique. Luego de formatear los discos, se crea el arreglo RAID0 y se formatea con un sistema de archivos ext4. Se crea el directorio donde se montará el almacenamiento y se agrega al fstab. Finalmente se respalda el arreglo para que se regenere cada vez que se reinicie el equipo.
+
+\begin{lstlisting}
+fdisk -l
+cgdisk /dev/sde
+cgdisk /dev/sdf
+mdadm --examine /dev/sd[e-f]
+mdadm --examine /dev/sd[e-f]1
+mdadm -C /dev/md0 -l raid0 -n 2 /dev/sd[e-f]1
+mdadm -E /dev/sd[e-f]1
+mdadm --detail /dev/md0
+mkfs.ext4 /dev/md0
+mkdir /mnt/scratch
+mdadm -E -s -v >> /etc/mdadm.conf
+\end{lstlisting}
+
+\section{Backup}
+Para el almacenamiento de respaldo se ha optado por crear un LVM para facilitar su expansión en caso de ser necesario, pues no es un almacenamiento que requiere ser accesado constantemente salvo para los respaldos semanales que se estarán realizando. Tomando lo anterior en cuenta, se siguen el siguiente procedimiento \cite{lvm-dummies}.
+
+\begin{lstlisting}
+pvcreate /dev/sdb
+pvcreate /dev/sdc
+pvcreate /dev/sdd
+vgcreate backup-0 /dev/sdb /dev/sdc /dev/sdd
+lvcreate -L 10.91t -n a backup-0
+mkfs.ext4 /dev/backup-0/a
+mkdir /mnt/backup
+\end{lstlisting}
+
+En /etc/fstab se agrega lo siguiente.
+
+\begin{lstlisting}
+/dev/md0		/mnt/scratch 		ext4 	defaults 	0 0
+/dev/backup-0/a		/mnt/backup		ext4	defaults	0 0
+\end{lstlisting}
+
+Posteriormente  se ejecuta lo siguiente para completar el procedimiento.
+
+\begin{lstlisting}
+mount -av
+mkdir -p /mnt/backup/opt
+mkdir -p /mnt/backup/home
+\end{lstlisting}
+
+\section{Respaldos desde sol3 hacia eskameca}
+Para poder realizar de manera periódica los respaldos de los datos, es necesario modificar el crontab en sol3. Para esto iniciamos sesión en este nodo y hacemos lo siguiente \cite{crontab}:
+
+\begin{lstlisting}
+crontab -e
+\end{lstlisting}
+
+Y agregamos lo siguiente:
+
+\begin{lstlisting}
+0 1 * * Sun rsync -ab /media/a50a3988-60b6-4b0d-aaa0-00dc243227e6/ClusterHome/ root@10.0.0.4:/mnt/backup/home/
+0 1 * * Sat rsync -ab /media/12ffdca9-be4d-4052-bb9a-ff74be1104dd/ClusterOpt/ root@10.0.0.4:/mnt/backup/opt/
+\end{lstlisting}
+
+Lo anterior programa el sistema para realizar un respaldo del home los domingos y de opt lo sábados, todas las semanas de todos los meses.
+
+\section{NFS para scratch}
+Para habilitar el directorio scratch, es necesario primero poder exportarlo como NFS para que sea visible al resto del clúster. Para esto, hacemos lo siguiente \cite{nfs-server} \cite{nfs}:
+
+\begin{lstlisting}
+systemctl enable rpcbind
+systemctl enable nfs-server
+systemctl enable nfs-lock
+systemctl enable nfs-idmap
+systemctl start rpcbind
+systemctl start nfs-server
+systemctl start nfs-lock
+systemctl start nfs-idmap
+\end{lstlisting}
+
+Ahora procedemos a modificar el archivo /etc/exports y agregamos lo siguiente para permitir que cualquier equipo en la red 10.0.0.0 pueda acceder al almacenamiento.
+
+\begin{lstlisting}
+/mnt/scratch	10.0.0.0/24(rw,subtree_check,secure,no_root_squash)
+\end{lstlisting}
+
+En cada uno de los nodos se modifica el archivo /etc/fstab para asegurar que se monte correctamente el almacenamiento.
+
+\begin{lstlisting}
+
+\end{lstlisting}
+
+\clearpage

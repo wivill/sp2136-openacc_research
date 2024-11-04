@@ -1,0 +1,39 @@
+\chapter{Ajuste fino de parámetros para cada usuario}
+Ocasionalmente, los procesos y tareas que ejecutan los usuarios en el clúster ameritan tener acceso en mayor medida a los recursos disponibles, lo cual puede verse limitado por la configuración por defecto que ofrece los equipos. En particular se han visto conflictos relacionados con el número máximo de procesos y la memoria reservada, pero se actualizará este documento en función de las nuevas necesidades que surjan. Los parámetros más típicos de esta índole se muestran a continuación:
+
+\begin{lstlisting}
+core file size          (blocks, -c) 0
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 449853
+max locked memory       (kbytes, -l) 64
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 1024
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 8192
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 4096
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+\end{lstlisting}
+
+Esta información se puede visualizar con el siguiente comando:
+
+\begin{lstlisting}
+ulimit -a
+\end{lstlisting}
+
+Cada opción provista en la información permite inspeccionar el parámetro de interés según sea el caso (-c, -d, -u, etc) \cite{finetuning00}. Para modificar el número de procesos, por ejemplo, se hace lo siguiente:
+
+\begin{lstlisting}
+ulimit -u valor # donde "valor" debe ser un número menor o igual al valor mostrado por ulimit -i
+\end{lstlisting}
+
+Este cambio se mantiene durante el transcurso de la sesión. Para que el cambio sea más permanente, se procede a editar el archivo /etc/security/limits.conf, el cual provee la documentación necesaria para modificar estos parámetros de forma correcta. El archivo adjunto muestra un caso de uso para realizar ajustes a usuarios particulares \cite{finetuning01}.
+
+\lstinputlisting{limits.conf}
+
+\clearpage

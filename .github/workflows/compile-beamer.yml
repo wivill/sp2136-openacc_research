@@ -26,18 +26,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: xu-cheng/latex-action@v3
         with:
-          root_file: |
-            report/report.tex
+          root_file:
             beamer/beamer.tex
+          latexmk_shell_escape: true
         # This allows the action to pull IEEE class files.
         env:
-          TEXINPUTS: ".:./report//:./beamer//:"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report
-          path: report.pdf
-          if-no-files-found: error
-          retention-days: 7
+          TEXINPUTS: ".:./beamer//:"
       - uses: actions/upload-artifact@v4
         with:
           name: beamer

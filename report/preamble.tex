@@ -1,0 +1,112 @@
+%email: willy.villalobos@ucr.ac.cr
+%author: Willy Vilallobos Marrero
+%date: 02/10/2016
+%description: plantilla para bitácora CNCA partiendo de proposal template de Francisco Siles
+%copyright: PRIS-Lab UCR	
+\documentclass[letterpaper]{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{tocloft}
+\usepackage[T1,hyphens]{url}
+%\usepackage{xspace}
+\usepackage{rotating}
+\usepackage{pgfgantt}
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref} % crea hypervínculos al parámetro que se le pasa, ya sea una sección o elemento del mismo documento, o una página web.
+\usepackage[hyphenbreaks]{breakurl}
+\usepackage{helvet}
+\usepackage{amsmath,amsfonts,amssymb}
+%\usepackage{color}
+\usepackage{xcolor}
+\usepackage{verbatim}
+\usepackage{tabls}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{listingsutf8} % mejora compatibilidad con símbolos
+\usepackage{inconsolata}
+% Parámetros para las citas de código
+\lstset{
+language=bash,
+basicstyle=\ttfamily\small,
+inputpath=scripts/,
+numberstyle=\footnotesize,
+numbers=left,
+backgroundcolor=\color{gray!20},
+frame=single,
+tabsize=2,
+rulecolor=\color{black!30},
+title=\lstname,
+commentstyle=\color{blue},
+keepspaces=true,
+%keywordstyle=\color{blue},
+stringstyle=\color{red},
+%escapeinside={\%*}{*)}
+breaklines=true,
+%breakatwhitespace=true, %Breaklines only in whitespaces. Comment for breaklines at any character.
+framextopmargin=2pt,
+framexbottommargin=2pt,
+inputencoding=utf8,
+extendedchars=true,
+literate={á}{{\'a}}1 {ü}{{\"u}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ü}{{\''U}}1
+}
+\usepackage{tikz}
+\usepackage{pgf}
+\usepackage{pgffor}
+\usepgfmodule{plot}
+\usepackage{wrapfig}
+\usetikzlibrary{arrows,decorations,backgrounds,fit,calc,through,scopes,positioning,automata,chains,er,fadings,calendar,matrix,mindmap,folding,patterns,petri,plothandlers,plotmarks,shadows,shapes,shapes.arrows,topaths,trees}
+\usepackage[hmargin=3cm, vmargin=4cm, head=2cm, foot=2cm]{geometry}
+\usepackage[font=small,textfont=it]{caption} %it is better not to use the same font type as the normal text to avoid confusion
+\usepackage{subcaption} %this one requires the caption package, and is incompatible with the now obsolete subfigure and old subfig
+\usepackage{tabulary}
+\usepackage{booktabs}
+\usepackage{comment}
+\usepackage{blindtext}
+\usepackage{lastpage}
+\pagestyle{fancy}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\renewcommand{\headrulewidth}{0.6pt}
+\renewcommand{\footrulewidth}{0.6pt}
+\fancypagestyle{plain}{%
+  \chead{}
+  \rhead{\bfseries \project}
+  \lfoot{\includegraphics[height=1cm]{logos/cenat.png}}
+  \rfoot{\includegraphics[height=1cm]{logos/cnca.png} }
+  \cfoot{\thepage\ de \pageref{LastPage}}
+}
+\pagestyle{plain} % to reinitialize the above commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\team}{\sura--Team}
+\newcommand{\user}{UCR\xspace}
+\newcommand{\priscloud}{%
+  {\fontfamily{pbk}\selectfont\textcolor{prisred}{PR}}%
+    {\fontfamily{pbk}\selectfont\textcolor{prisblack}{IS-}}%
+    {\fontfamily{pbk}\selectfont\textcolor{prisred}{C}}%
+    {\fontfamily{pbk}\selectfont\textcolor{prisblack}{loud}}%
+  \xspace}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\graphicspath{{imgs/}}    % set the graphics path
+%\newcommand{\videospath}{../../../../../videos/} %
+\input{prislab-commands.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\project}{\cnca}
+\title{Bitácora de trabajo:\\\emph{\project}: Asistencia de encargado de infraestructura}
+\author{\includegraphics[width=5cm]{logos/cnca.png}\\%
+  \begin{tabulary}{\textwidth}{lr}
+    \\
+    \\
+    Willy Villalobos Marrero\\
+  \end{tabulary}
+}
+\makeatletter
+\renewcommand\chapter{\par%
+  \thispagestyle{fancy}%
+  \global\@topnum\z@
+  \@afterindentfalse
+  \secdef\@chapter\@schapter}
+\makeatother
+
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % for chapters
