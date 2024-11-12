@@ -1,14 +1,14 @@
 THREADS?=1
 
-all: compile
+all: run
 
 compile: omp_merge_sort.c
-	gcc -Wall omp_merge_sort.c -o omp_merge_sort.exe -fopenmp
+	gcc -Wall $< -o omp_merge_sort.exe -fopenmp
 
 submit: 
 	sbatch ./submit.slurm
 
-run:
+run: compile
 	export OMP_NUM_THREADS=$(THREADS) && ./omp_merge_sort.exe
 
 clean:

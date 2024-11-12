@@ -1,0 +1,135 @@
+\chapter{Constructos de Cómputo}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Los constructos de cómputo son los que realizan la distribución de trabajo entre los hilos paralelos, por lo que son la parte fundamental de cada programa acelerado mediante OpenACC. En el caso de programas con bucles estos constructos se emplean para distribuir cada iteración entre los hilos disponibles. OpenACC cuenta con dos directivas de distribución: kernels y parallel, los cuales pueden aumentar sus capacidades si se emplean en conjunto con directivas de bucle. Aunque ambos constructos se usan para distribuir el código a los aceleradores o recursos disponibles, cuentan con una filosofía de uso diferente.
+
+\section{Kernels}
+La directiva kernels actúa como una etiqueta que le indica al compilador que el segmento de código debe enviarse a un acelerador de ser posible. Actúa de una forma similar a los kernels de Cuda \_\_global\_\_ \cite{cuda}. Usar únicamente la directiva kernels delega al compilador cómo se va a paralelizar y manejar el código delimitado, por lo que pueden haber escenarios donde el compilador decida generar varios constructos de bucle, o decida generar múltiples kernels por cada bucle que encuentre. A continuación se presenta un pequeño ejemplo de la directiva.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{lstlisting}[style=CStyle]
+int a[n][m], b[n][m], c[n][m], d[n][m];
+init(a, b, n, m);
+
+#pragma acc kernels
+{
+    for(int j=0; j<n; ++j)
+    {
+        for(int k=0; k<m; ++k)
+        {
+            c[j][k] = a[j][k];
+            a[j][k] = c[j][k] + b[j][k];
+        }
+    }
+
+    for(int j=0; j<n; ++j)
+    {
+        for(int k=0; k<m; ++k)
+        {
+            d[j][k] = a[j][k] - 5;
+        }
+    }
+}
+\end{lstlisting}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+El compilador podría generar alguna de las siguientes interpretaciones:
+\begin{lstlisting}[style=CStyle]
+int a[n][m], b[n][m], c[n][m], d[n][m];
+init(a, b, n, m);
+
+#pragma acc kernels
+{
+    #pragma acc parallel loop
+    {
+        for(int j=0; j<n; ++j)
+        {
+            for(int k=0; k<m; ++k)
+            {
+                c[j][k] = a[j][k];
+                a[j][k] = c[j][k] + b[j][k];
+            }
+        }
+    }
+    #pragma acc parallel loop
+    {
+        for(int j=0; j<n; ++j)
+        {
+            for(int k=0; k<m; ++k)
+            {
+                d[j][k] = a[j][k] - 5;
+            }
+        }
+    }
+}
+\end{lstlisting}
+
+\begin{lstlisting}[style=CStyle]
+int a[n][m], b[n][m], c[n][m], d[n][m];
+init(a, b, n, m);
+
+#pragma acc kernels
+{
+    for(int j=0; j<n; ++j)
+    {
+        for(int k=0; k<m; ++k)
+        {
+            c[j][k] = a[j][k];
+            a[j][k] = c[j][k] + b[j][k];
+            d[j][k] = a[j][k] - 5;
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Parallel}
+La directiva parallel permite al usuario tener el criterio para decidir qué paralelizar al definir explícitamente los segmentos del programa. Kernels al momento de compilar el programa puede generar regiones equivalente a que si se definieran directivas parallel. A continuación se muestra un ejemplo de uso, aunque no necesariamente ideal.
+
+\begin{lstlisting}[style=CStyle]
+int a[n][m], b[n][m], c[n][m], d[n][m];
+init(a, b, n, m);
+
+#pragma acc parallel
+{
+    for(int j=0; j<n; ++j)
+    {
+        for(int k=0; k<m; ++k)
+        {
+            c[j][k] = a[j][k];
+            a[j][k] = c[j][k] + b[j][k];
+        }
+    }
+}
+\end{lstlisting}
+
+\section{Loop}
+El constructo loop puede ser usado dentro de parallel o de kernel. Básicamente le indica al compilador que las iteraciones del bucle son independientes entre si, por lo que pueden asignarse a diferentes hilos.
+
+\begin{lstlisting}[style=CStyle]
+void foo(int *a, int *b, n)
+{
+    #pragma acc parallel
+    #pragma acc loop
+    for(int j=0; j<n; ++j)
+    {
+        a[j] += b[j];
+    }
+}
+
+void bar(int *a, int *b, n)
+{
+    #pragma acc parallel
+    #pragma acc loop gang worker vector
+    for(int j=0; j<n; ++j)
+    {
+        a[j] += b[j];
+    }
+}
+
+\end{lstlisting}
+
+Las implementaciones de foo y de bar trabajan de manera similar. La principal diferencia radica en que bar especifica al compilador que se exploten todos los niveles de paralelismo de hilos.
+
+\section{Routine}
+
+\clearpage

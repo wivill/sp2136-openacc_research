@@ -50,6 +50,37 @@ inputencoding=utf8,
 extendedchars=true,
 literate={á}{{\'a}}1 {ü}{{\"u}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ñ}{{\~n}}1 {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ü}{{\''U}}1
 }
+
+
+
+% Defines styling for C code listing
+\definecolor{mGreen}{rgb}{0,0.6,0}
+\definecolor{mGray}{rgb}{0.5,0.5,0.5}
+\definecolor{mPurple}{rgb}{0.58,0,0.82}
+\definecolor{backgroundColour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{CStyle}{
+  backgroundcolor=\color{gray!20},
+  commentstyle=\color{mGreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\footnotesize,
+  stringstyle=\color{mPurple},
+  basicstyle=\ttfamily\small,
+  breakatwhitespace=false,
+  breaklines=true,
+  keepspaces=true,
+  numbers=left,
+  frame=single,
+  tabsize=2,
+  rulecolor=\color{black!30},
+  %escapeinside={\%*}{*)}
+  framextopmargin=2pt,
+  framexbottommargin=2pt,
+  inputencoding=utf8,
+  extendedchars=true,
+  language=C
+}
+
 \usepackage{tikz}
 \usepackage{pgf}
 \usepackage{pgffor}
@@ -71,8 +102,8 @@ literate={á}{{\'a}}1 {ü}{{\"u}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{
 \fancypagestyle{plain}{%
   \chead{}
   \rhead{\bfseries \project}
-  \lfoot{\includegraphics[height=1cm]{logos/cenat.png}}
-  \rfoot{\includegraphics[height=1cm]{logos/cnca.png} }
+  \lfoot{\includegraphics[height=1cm]{logos/eie.png}}
+  \rfoot{\includegraphics[height=1cm]{logos/ppie.png} }
   \cfoot{\thepage\ de \pageref{LastPage}}
 }
 \pagestyle{plain} % to reinitialize the above commands
@@ -92,13 +123,14 @@ literate={á}{{\'a}}1 {ü}{{\"u}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\newcommand{\project}{\cnca}
-\title{Bitácora de trabajo:\\\emph{\project}: Asistencia de encargado de infraestructura}
-\author{\includegraphics[width=5cm]{logos/cnca.png}\\%
+\newcommand{\project}{\ppie}
+\title{Universidad de Costa Rica\\Investigación bibliográfica:\\OpenACC}
+\author{\includegraphics[width=5cm]{logos/ppie.png}\\%
   \begin{tabulary}{\textwidth}{lr}
     \\
     \\
     Willy Villalobos Marrero\\
+    B17170\\
   \end{tabulary}
 }
 \makeatletter

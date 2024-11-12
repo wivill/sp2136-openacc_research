@@ -1,0 +1,98 @@
+\chapter{Un poco sobre OpenACC}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+El modelo de programación de OpenACC se basa en la inserción de pistas o pragmas dentro del programa que le indican al compilador cómo debe paralelizarse y ejecutarse. El compilador luego maneja la mayoría de las complejidades de la paralelización, lo cual facilita al programador enfocarse más en la solución y no tanto en los detalles como la arquitectura donde se ejecutará el programa. Al tratarse de directivas, es posible compilar y ejecutar el mismo programa de manera secuencial y paralela sin cambios al código en si \cite{openacc_for_programmers}.
+
+Los compiladores disponibles para OpenACC, entre los que se incluye el compilador PGI (legacy, ahora incluído dentro del Nvidia HPC SDK), GCC 12, y otras ofertas de empresas privadas, pueden generar ejecutables compatibles con varias plataformas, GPUs y aceleradores. Nvidia ofrecía facilidades puntuales en un inicio para paralelizar rápidamente código para ejecutarse en sus GPUs, pero también es posible aprovechar las directivas para ejecutarse en GPUs de AMD o aceleradores de Intel y FPGAs \cite{openacc_for_programmers}.
+
+\section{Sintaxis de OpenACC}
+Aunque no sea un lenguaje por sí mismo, sus directivas siguen la sintaxis para C y C++ mostrada en el siguiente bloque de código, donde la palabra clave \textit{\#pragma} viene seguida por el tipo de directiva \textit{acc}. Posteriormente viene la directiva como tal que se proporciona al compilador y le indica lo que se desea hacer, y finalmente se proporcionan las cláusulas con información como el tipo de variables, si es una variable de residuo o sumatoria, entre otros casos.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{lstlisting}[style=CStyle]
+#pragma acc <directive> [clause[[,] clause]...]
+{
+    /*
+    Bucle, porción de código...
+    */
+}
+\end{lstlisting}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+OpenACC distingue tres tipos de directivas:
+
+\subsection*{Directivas de computo}
+Estos marcan una porción del código la cual se va a acelerar. Generalmente explotan el paralelismo a nivel de datos.
+
+\begin{itemize}
+    \item parallel.
+    \item kernels.
+    \item routine.
+    \item loop.
+\end{itemize}
+
+\subsection*{Directivas de manejo de datos}
+Se emplean para poder controlar el movimiento de los datos entre ubicaciones en memoria, con lo cual es posible eliminar cuellos de botella ocasionados por este tipo de transacciones.
+
+\begin{itemize}
+    \item data.
+    \item update.
+    \item cache.
+    \item atomic.
+    \item declare.
+    \item enter data (dos palabras).
+    \item exit data (dos palabras).
+\end{itemize}
+
+\subsection*{Directivas de sincronización}
+Se emplea para poder forzar al programa a esperar a que se complete una o varias tareas antes de seguir adelante. Es útil en caso de que exista dependencia de resultados.
+
+\begin{itemize}
+    \item wait
+\end{itemize}
+
+Las directivas de OpenACC pueden extenderse por una o múltiples cláusulas, las cuales agregan información adicional para que el compilador tenga una mejor idea de cómo manejar el bloque a paralelizar. De manera similar existen varios tipos de cláusulas, y no siempre es posible combinarlas con cualquier directiva.
+
+\subsection*{Manejo de datos}
+Estas cláusulas sobreescriben el análisis del compilador para las variables indicadas al asignarles un comportamiento deseado.
+\begin{itemize}
+    \item default.
+    \item private.
+    \item firstprivate.
+    \item copy.
+    \item copyin.
+    \item copyout.
+    \item create.
+    \item delete.
+    \item deviceptr.
+\end{itemize}
+
+\subsection*{Distribución de trabajo}
+Sobreescriben los valores de distribución de tareas del compilador entre los hilos generados.
+\begin{itemize}
+    \item seq.
+    \item auto.
+    \item gang.
+    \item worker.
+    \item vector.
+    \item tile.
+    \item num\_gangs.
+    \item num\_workers.
+    \item vector\_length.
+\end{itemize}
+
+\subsection*{Control de flujo}
+Estas cláusulas permiten controlar el flujo de la ejecución en paralelo.
+
+\begin{itemize}
+    \item Condicionales: if, if\_present.
+    \item Redefinición de dependencias: independent, reduction.
+    \item Paralelismo de tarea: async, wait
+\end{itemize}
+
+Estos pragmas pueden emplearse por si solo, pero adicionalmente OpenACC cuenta con un API de rutinas y variables de ambiente. Para poder emplear este API basta con importar el header de OpenACC.
+
+\begin{lstlisting}[style=CStyle]
+#include "openacc.h"
+\end{lstlisting}
+
+\clearpage
