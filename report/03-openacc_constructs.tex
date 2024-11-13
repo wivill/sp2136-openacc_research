@@ -106,7 +106,7 @@ init(a, b, n, m);
 El constructo loop puede ser usado dentro de parallel o de kernel. Básicamente le indica al compilador que las iteraciones del bucle son independientes entre si, por lo que pueden asignarse a diferentes hilos.
 
 \begin{lstlisting}[style=CStyle]
-void foo(int *a, int *b, n)
+void foo(int *a, int *b, int n)
 {
     #pragma acc parallel
     #pragma acc loop
@@ -116,7 +116,7 @@ void foo(int *a, int *b, n)
     }
 }
 
-void bar(int *a, int *b, n)
+void bar(int *a, int *b, int n)
 {
     #pragma acc parallel
     #pragma acc loop gang worker vector
@@ -131,5 +131,42 @@ void bar(int *a, int *b, n)
 Las implementaciones de foo y de bar trabajan de manera similar. La principal diferencia radica en que bar especifica al compilador que se exploten todos los niveles de paralelismo de hilos.
 
 \section{Routine}
+La directiva routine se emplea en las declaraciones y definiciones de proceso para indicar al compilador que una subrutina puede ser potencialmente paralelizable. A continuación se muestran tres formas en que la directiva routine puede modificar una fucnión:
+
+\begin{lstlisting}[style=CStyle]
+#pragma acc routine
+extern void foo(int *a, int *b, int n);
+
+#pragma acc routine(foo)
+
+#pragma acc routine
+void foo(int *a, int *b, int n);
+{
+    #pragma acc loop gang
+    for(int j=0; j<n; ++j)
+    {
+        a[j] += b[j];
+    }
+}
+\end{lstlisting}
+
+El primer método coloca la diirectiva en la declaración de la función y le indica al compilador que cualquier llamado a esa función dentro de los constructos de cómputo deberá ser paralelizado. El segundo método emplea la directiva con el nombre de la función para declarar una función que ya ha sido construida anteriormente como función dispositivo (device function, en términos de GPU es una función ejecutada en la GPU y que se llama desde la GPU. Una función global se ejecuta en GPU y se llama desde el CPU). El tercer método le indica al compilador que genere una versión device de la función para que pueda ser llamado por los constructos de cómputo.
+
+La directiva routine puede contener las siguientes cláusulas para definir por ejemplo en qué dispositivo se debe llamar y ejecutar la función.
+
+\begin{lstlisting}[style=CStyle]
+#pragma acc routine vector device_type(nvidia) gang bind(foo_nvidia)
+void foo(int *a, int *b, int n);
+
+#pragma acc routine nohost
+void foo_nvidia(int *a, int *b, int n)
+{
+    #pragma acc loop gang
+    for(int j=0; j<n; ++j)
+    {
+        a[j] += b[j];
+    }
+}
+\end{lstlisting}
 
 \clearpage

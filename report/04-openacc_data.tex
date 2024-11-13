@@ -1,0 +1,70 @@
+\chapter{Manejo de ambientes de datos en OpenACC}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+OpenACC está diseñado para manejar ambientes donde los constructos de cómputo se ejecutan en dispositivos con su propio espacio de memoria que no necesariamente es compartido directamente con el programa principal, lo cual requiere de transacciones para mover los datos entre el dispositivo acelerador y el equipo principal.
+
+En este contexto las siguientes variables son privadas por defecto, por lo que es necesario copiar los datos por cada elemento a ejecutar que se cree:
+
+\begin{itemize}
+    \item Variables de control de bucles que estén asociados a un cosntructo de bucle.
+    \item Variables declaradas dentro de un bloque de código en C.
+    \item Variables declaradas dentro de funciones.
+\end{itemize}
+
+Variables escalares que se utilicen en regiones paralelizadas se toman como privadas por lo general. La especificación de OpenACC adicionalmente define un par de conceptos importantes en cuanto a los datos:
+
+\begin{itemize}
+    \item Región de datos.
+    \item Ciclo de vida de datos.
+\end{itemize}
+
+\section{Directivas de datos}
+Existen dos tipos de directivas de datos: estructuradas (structured) y no estructuradas (unstructured). Una región de datos estructurada se define en un solo contexto donde el ciclo de vida completo de los datos se cumple, es decir, se crean y se destruyen los datos. A nivel de código en C ese contexto estaría entre llaves.
+
+\begin{lstlisting}[style=CStyle]
+#pragma acc data copy(a)
+{
+    <use a>
+}
+\end{lstlisting}
+
+Una región de datos no estructurada se delimita con un par inicio-fin donde no necesariamente se tiene el mismo contexto.
+
+\begin{lstlisting}[style=CStyle]
+void foo(int *array, int n)
+{
+#pragma acc enter data copyin(array[0:n])
+}
+
+void bar(int *array, int n)
+{
+#pragma acc exit data copyout(array[0:n])
+}
+\end{lstlisting}
+
+Estas directivas generalmente se emplean como una optimización adional a lo que ya ofrecen los constructos de cómputo y bucles.
+
+\section{Cláusulas de datos}
+Las cláusulas de datos especifican el manejo de los datos para las variables y arreglos que se indiquen. Además de la cláusula de salida del constructo de datos, existen seis cláusulas que pueden utilizarse en constructos de cómputo y de datos.
+
+\begin{itemize}
+    \item present.
+    \item copy.
+    \item copyin.
+    \item copyout.
+    \item delete.
+    \item deviceptr.
+\end{itemize}
+
+\section{Directiva cache}
+Esta directiva provee un mecanismo para describir datos que deberían moverse a un banco de memoria más rápido en caso de que sea posible. En el ejemplo mostrado más adelante la directiva cache le indica al compilador que cada iteración del bucle for use solo un elemento del arreglo b. El compilador con esto interpreta que debe mover n elementos del arreglo a una jerarquía de memoria más rápida para procesar el bucle y paralelizarlo. Se debe tomar en cuenta que esta transacción valga la pena en términos de costo.
+
+\begin{lstlisting}[style=CStyle]
+#pragma acc loop
+for (int j=0; i<m; ++j)
+{
+    #pragma acc cache(b[j])
+    b[j] = b[j]*c;
+}
+\end{lstlisting}
+
+\clearpage

@@ -1,0 +1,143 @@
+\chapter{Compilando y ejecutando en Kabré}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+El clúster Kabré del CeNAT cuenta con módulos de ambiente con el compilador PGI (actualmente legacy), así como varias versiones de Cuda que pueden aprovechar los pragmas de OpenACC. A continuación se lista los requisitos mínimos para poder correr código acelerado con OpenACC.
+
+Lo primero es cargar módulo de ambiente del compilador de PGI. Existen varias versiones instaladas, pero a día de hoy la versión funcional es pgi/19.10. Las otras versiones darán un error de licencia y hará que el programa se caiga.
+
+\begin{lstlisting}
+module load pgi/19.10
+\end{lstlisting}
+
+Esto habilita el compilador de pgi, cuya nomenclatura y sintaxis es similar al compilador gcc. PGI también soporta pragmas de openmp. Para compilar el programa por ejemplo se puede hacer lo siguiente:
+
+\begin{lstlisting}
+# Compilación secuencial
+CC=pgcc -O3
+
+# Compilación con pragmas de openmp
+CC=pgcc -O3 -mp
+
+# Si se quiere usar una GPU Nvidia como acelerador:
+CC=pgcc -O3 -acc -ta=nvidia -Minfo=accel 
+
+# OBJ y LIB existen según las bibliotecas y objetos que el código requiera.
+$(CC) -c $(OBJ)
+$(CC) -o exe $(OBJ) $(LIB)
+
+\end{lstlisting}
+
+Durante el proceso de compilación se determina, según los pragmas empleados, la forma de paralelizar y ejecutar el código. Posteriormente se puede ejecutar el binario como cualquier otro, aunque esta instancia lo ideal es subirlo como un trabajo mediante sbatch.
+
+Para efectos de este documento y la presentación, se trabajo con un código de muestra que calcula el área del conjunto de Mandelbrot, el cual es un fractal definido en el plano complejo.
+
+\begin{lstlisting}[style=CStyle]
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+
+# define NPOINTS 4000
+# define MAXITER 4000
+
+
+struct complex{
+    double real;
+    double imag;
+};
+
+int main(){
+    int i, j, iter, numoutside = 0;
+    double area, error, ztemp;
+    struct complex z, c;
+
+    clock_t start, end;
+    double cpu_time_used;
+        
+    start = clock();
+    /*
+    *   
+    *
+    *     Outer loops run over npoints, initialise z=c
+    *
+    *     Inner loop has the iteration z=z*z+c, and threshold test
+    */
+    for (i=0; i<NPOINTS; i++) {
+        for (j=0; j<NPOINTS; j++) {
+            c.real = -2.0+2.5*(double)(i)/(double)(NPOINTS)+1.0e-7;
+            c.imag = 1.125*(double)(j)/(double)(NPOINTS)+1.0e-7;
+            z=c;
+            for (iter=0; iter<MAXITER; iter++){
+                ztemp=(z.real*z.real)-(z.imag*z.imag)+c.real;
+                z.imag=z.real*z.imag*2+c.imag; 
+                z.real=ztemp; 
+                if ((z.real*z.real+z.imag*z.imag)>4.0e0) {
+                    numoutside++;
+                        break; 
+                }
+            }
+        }
+    }
+
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    /*
+    *  Calculate area and error and output the results
+    */
+
+    area=2.0*2.5*1.125*(double)(NPOINTS*NPOINTS-numoutside)/(double)(NPOINTS*NPOINTS);
+    error=area/(double)NPOINTS;
+
+    printf("Area of Mandlebrot set = %12.8f +/- %12.8f\n",area,error);
+    printf("Time taken for calculation: %f\n",cpu_time_used);    
+}    
+\end{lstlisting}
+
+La parte paralelizable más obvia es la de los bucles for anidados. Tomando en cuenta que los índices son variables privadas y la alta paralelización, se emplean los siguientes pragmas de openacc:
+
+\begin{lstlisting}[style=CStyle]
+#pragma acc parallel loop reduction(+:numoutside) private(i,j) 
+for (i=0; i<NPOINTS; i++) {
+#pragma acc loop vector private(c,z,found,c,z,iter,ztemp)
+    for (j=0; j<NPOINTS; j++) {
+        c.real = -2.0+2.5*(double)(i)/(double)(NPOINTS)+1.0e-7;
+        c.imag = 1.125*(double)(j)/(double)(NPOINTS)+1.0e-7;
+        z.real=c.real;
+        z.imag=c.imag;
+        found  = 0;
+        iter = 0;
+        while(iter<MAXITER && found == 0){
+            ztemp=(z.real*z.real)-(z.imag*z.imag)+c.real;
+            z.imag=z.real*z.imag*2+c.imag; 
+            z.real=ztemp; 
+            if ((z.real*z.real+z.imag*z.imag)>4.0e0 && found == 0) {
+                numoutside++; 
+                found = 1;
+            }
+            iter =  iter + 1;
+        }
+    }
+}
+\end{lstlisting}
+
+Estos fueron los resultados obtenidos para la ejecución secuencial, usando openmp con 4 hilos, y las GPUs de la cola nukwa en Kabré:
+
+\begin{lstlisting}
+[wvillalobos@login-1 results]$ tail -n3 ./*
+==> ./acc_result.txt <==
+pgcc -O3 -acc -ta=nvidia -Minfo=accel  -o area.acc area.acc.o 
+Area of Mandlebrot set =   1.50787863 +/-   0.00037697
+Time taken for calculation: 0.490000
+
+==> ./omp_result.txt <==
+pgcc -O3 -mp  -o area.omp area.omp.o 
+Area of Mandlebrot set =   1.50787863 +/-   0.00037697
+Time taken for calculation: 28.538546 on 4 threads
+
+==> ./sequential_result.txt <==
+pgcc -O3 -o area.ser area.ser.o 
+Area of Mandlebrot set =   1.50787863 +/-   0.00037697
+Time taken for calculation: 60.490000
+\end{lstlisting}
+
+\clearpage
